@@ -1,0 +1,14 @@
+<launch>
+
+  <rosparam command="load" file="$(find pdg)/params/toaster_simu.yaml" />
+
+  <include file="$(find pdg)/launch/pdg.launch"></include>
+	<node name="agent_monitor" pkg="agent_monitor" type="agent_monitor" output="screen" />
+  <node name="area_manager" pkg="area_manager" type="area_manager" output="screen" />
+	<node name="toaster_visualizer" pkg="toaster_visualizer" type="toaster_visualizer" output="screen" />
+	<node name="toaster_simu" pkg="toaster_simu" type="toaster_simu" output="screen" />
+
+	<node name="rviz" pkg="rviz" type="rviz" output="screen"/>
+
+	<node pkg="tf" type="static_transform_publisher" name="pr2_broadcaster" args="3.82 8.44 0.0 -1.49 0.0 0.0 map base_footprint 10"/>
+</launch>
