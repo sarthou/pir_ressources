@@ -19,11 +19,17 @@ std::vector<annotation_t> getAnnotations(const std::string& path)
   std::vector<annotation_t> annotations;
 
   std::ifstream file(path);
-  annotation_t tmp_annotation;
-  while (file >> tmp_annotation.timestamp_start >> tmp_annotation.timestamp_end >> tmp_annotation.activity)
+  if(file.is_open())
   {
-    annotations.push_back(tmp_annotation);
+    annotation_t tmp_annotation;
+    while (file >> tmp_annotation.timestamp_start >> tmp_annotation.timestamp_end >> tmp_annotation.activity)
+    {
+      annotations.push_back(tmp_annotation);
+    }
+    file.close();
   }
+  else
+    std::cout << "[ERROR] Can not open file: " << path << std::endl;
 
   return annotations;
 }
@@ -92,12 +98,62 @@ void setAsTriplets(std::vector<annotation_t>& annotations)
   }
 }
 
+void writeToFile(const std::string& path, const std::vector<annotation_t>& annotations)
+{
+  std::ofstream file;
+  file.open(path);
+  if (file.is_open())
+  {
+    for(auto& annotation : annotations)
+      file << annotation.timestamp_start << " " << annotation.activity << std::endl;
+    file.close();
+    std::cout << "--> File saved at : " << path << std::endl;
+  }
+  else
+    std::cout << "[ERROR] Can not open file: " << path << std::endl;
+}
+
+std::string getFileName(const std::string& original_path)
+{
+  std::string new_path = original_path;
+
+  size_t dot_pose = std::string::npos;
+  size_t pose = std::string::npos;
+  for(size_t i = 0; i < new_path.size(); i++)
+  {
+    if(new_path[i] == '.')
+      dot_pose = i;
+    else if(new_path[i] == '/')
+      pose = i;
+  }
+
+  if(pose == std::string::npos)
+  {
+    if(dot_pose == std::string::npos)
+      new_path += "_arranged.txt";
+    else
+      new_path.replace(dot_pose, new_path.size() - dot_pose, "_arranged.txt");
+  }
+  else
+  {
+    if(dot_pose == std::string::npos)
+      new_path += "_arranged.txt";
+    else if(dot_pose > pose)
+      new_path.replace(dot_pose, new_path.size() - dot_pose, "_arranged.txt");
+    else
+      new_path += "_arranged.txt";
+  }
+
+  return new_path;
+}
+
 int main(int argc, char** argv)
 {
   Parameters params;
   params.insert(Parameter("high_level_activities", {"-h", "--high_level"}, {"false"}));
   params.insert(Parameter("phases", {"-p", "--phases"}, {"false"}));
   params.insert(Parameter("triplets", {"-t", "--triplets"}, {"false"}));
+  params.insert(Parameter("output", {"-o", "--output"}));
   params.insert(Parameter("path", {}));
 
   params.set(argc, argv);
@@ -126,6 +182,12 @@ int main(int argc, char** argv)
 
   for(auto& annotation : annotations)
     std::cout << annotation.timestamp_start << " : " << annotation.activity << std::endl;
+
+  std::string output_path = params.parameters_.at("output").getFirst();
+  if(output_path == "")
+    output_path = getFileName(file_path);
+
+  writeToFile(output_path, annotations);
 
   return 0;
 }
